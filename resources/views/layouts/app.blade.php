@@ -71,8 +71,22 @@
             <a href="{{ route('send-money') }}" class="nav-link {{ request()->routeIs('send-money*') ? 'active' : '' }}">
                 <i class="bi bi-send"></i> Send Money
             </a>
+            <a href="{{ route('payment.checkout') }}" class="nav-link {{ request()->routeIs('payment.*') ? 'active' : '' }}">
+                <i class="bi bi-credit-card"></i> Fiuu Payment
+            </a>
+            <a href="{{ route('crypto.index') }}" class="nav-link {{ request()->routeIs('crypto.*') ? 'active' : '' }}">
+                <i class="bi bi-currency-bitcoin"></i> Crypto Wallet
+            </a>
             <a href="{{ route('data-stock.index') }}" class="nav-link {{ request()->routeIs('data-stock.*') ? 'active' : '' }}">
                 <i class="bi bi-wallet"></i> Data Stock Wallet
+            </a>
+            <a href="{{ route('kyc.face-recognition') }}" class="nav-link {{ request()->routeIs('kyc.face-recognition') ? 'active' : '' }}">
+                <i class="bi bi-camera-video"></i> Face Verification
+            </a>
+            
+            <div class="nav-section">SUPPORT</div>
+            <a href="{{ route('enquiries.index') }}" class="nav-link {{ request()->routeIs('enquiries.*') ? 'active' : '' }}">
+                <i class="bi bi-chat-left-text"></i> Help & Support
             </a>
             
             <div class="nav-section">ACCOUNT</div>

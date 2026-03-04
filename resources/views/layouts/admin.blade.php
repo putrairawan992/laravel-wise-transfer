@@ -47,6 +47,22 @@
             opacity: 0.8;
         }
         input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+        /* Custom Input Styles for Dark Theme */
+        .form-control, .form-select {
+            background-color: #0f172a;
+            border-color: var(--border-color);
+            color: #f1f5f9;
+        }
+        .form-control:focus, .form-select:focus {
+            background-color: #1e293b;
+            border-color: var(--primary-color);
+            color: #f1f5f9;
+            box-shadow: 0 0 0 0.25rem rgba(168, 85, 247, 0.25);
+        }
+        .form-control::placeholder {
+            color: #64748b;
+        }
     </style>
 </head>
 <body>
@@ -68,6 +84,16 @@
             <div class="nav-section">Transactions</div>
             <a href="{{ route('admin.transactions.index') }}" class="nav-link {{ request()->routeIs('admin.transactions.*') ? 'active' : '' }}">
                 <i class="bi bi-receipt"></i> Payments
+            </a>
+
+            <div class="nav-section">Support</div>
+            <a href="{{ route('admin.enquiries.index') }}" class="nav-link {{ request()->routeIs('admin.enquiries.*') ? 'active' : '' }}">
+                <i class="bi bi-chat-left-dots"></i> Support Tickets
+            </a>
+
+            <div class="nav-section">System</div>
+            <a href="{{ route('admin.integrations.index') }}" class="nav-link {{ request()->routeIs('admin.integrations.*') ? 'active' : '' }}">
+                <i class="bi bi-hdd-network"></i> Integrations
             </a>
 
             <div class="nav-section">Others</div>

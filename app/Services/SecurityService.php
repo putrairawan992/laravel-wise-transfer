@@ -24,17 +24,28 @@ class SecurityService
             return;
         }
 
-        $key = openssl_pkey_new([
-            'private_key_bits' => 2048,
-            'private_key_type' => OPENSSL_KEYTYPE_RSA,
-        ]);
+        $config = array(
+            "digest_alg" => "sha512",
+            "private_key_bits" => 2048,
+            "private_key_type" => OPENSSL_KEYTYPE_RSA,
+        );
+        
+        // Try to locate openssl.cnf
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            $opensslConfigPath = getenv('OPENSSL_CONF') ?: 'C:\xampp\php\extras\ssl\openssl.cnf';
+            if (file_exists($opensslConfigPath)) {
+                $config['config'] = $opensslConfigPath;
+            }
+        }
+
+        $key = openssl_pkey_new($config);
 
         if ($key === false) {
             throw new \Exception('RSA key generation failed: '.openssl_error_string());
         }
 
         $privatePem = '';
-        if (!openssl_pkey_export($key, $privatePem)) {
+        if (!openssl_pkey_export($key, $privatePem, null, $config)) {
             throw new \Exception('RSA private key export failed: '.openssl_error_string());
         }
 

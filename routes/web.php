@@ -11,6 +11,13 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
 use App\Http\Controllers\Admin\KycController as AdminKycController;
 
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\EnquiryController;
+use App\Http\Controllers\CryptoController;
+
+use App\Http\Controllers\Admin\AdminEnquiryController;
+use App\Http\Controllers\Admin\IntegrationStatusController;
+
 Route::get('/', function () {
     return redirect()->route('login');
 });
@@ -18,6 +25,9 @@ Route::get('/', function () {
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
     Route::post('/login', [LoginController::class, 'authenticate'])->name('login.post');
+    // Fiuu Payment Callback (needs to be public usually, or handle csrf)
+    Route::post('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
+    Route::post('/payment/notify', [PaymentController::class, 'notify'])->name('payment.notify');
 });
 
 Route::middleware('auth')->group(function () {
@@ -43,6 +53,25 @@ Route::middleware('auth')->group(function () {
         Route::post('/kyc/face-verify', [KycController::class, 'faceVerify'])->name('kyc.faceVerify');
         Route::get('/kyc/download/{type}', [KycController::class, 'download'])->name('kyc.download');
         Route::get('/kyc/view/{type}', [KycController::class, 'view'])->name('kyc.view');
+        
+        // Face Verification Page
+        Route::get('/kyc/face-recognition', function () {
+            return view('kyc.face-recognition');
+        })->name('kyc.face-recognition');
+
+        // Payment Routes
+        Route::get('/payment/checkout', [PaymentController::class, 'checkout'])->name('payment.checkout');
+        Route::post('/payment/process', [PaymentController::class, 'process'])->name('payment.process');
+
+        // Enquiry Routes
+        Route::get('/enquiries', [EnquiryController::class, 'index'])->name('enquiries.index');
+        Route::get('/enquiries/create', [EnquiryController::class, 'create'])->name('enquiries.create');
+        Route::post('/enquiries', [EnquiryController::class, 'store'])->name('enquiries.store');
+        Route::get('/enquiries/{enquiry}', [EnquiryController::class, 'show'])->name('enquiries.show');
+
+        // Crypto Routes
+        Route::get('/crypto/wallet', [CryptoController::class, 'index'])->name('crypto.index');
+        Route::post('/crypto/wallet', [CryptoController::class, 'checkWallet'])->name('crypto.check');
     });
 
     Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
@@ -53,5 +82,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/kyc/{kyc}/approve', [AdminKycController::class, 'approve'])->name('kyc.approve');
         Route::post('/kyc/{kyc}/reject', [AdminKycController::class, 'reject'])->name('kyc.reject');
         Route::get('/kyc/{kyc}/download/{type}', [AdminKycController::class, 'download'])->name('kyc.download');
+
+        // Admin Enquiry Routes
+        Route::get('/enquiries', [AdminEnquiryController::class, 'index'])->name('enquiries.index');
+        Route::get('/enquiries/{enquiry}', [AdminEnquiryController::class, 'show'])->name('enquiries.show');
+        Route::patch('/enquiries/{enquiry}/status', [AdminEnquiryController::class, 'updateStatus'])->name('enquiries.updateStatus');
+
+        // Integration Status
+        Route::get('/integrations', [IntegrationStatusController::class, 'index'])->name('integrations.index');
     });
 });

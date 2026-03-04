@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d4262cbc56e9f68aa701be9b4f6fb0fa",
+    "content-hash": "538653aa98767ff91a795c42ca1e9b1a",
     "packages": [
         {
             "name": "brick/math",
@@ -3522,6 +3522,65 @@
             "time": "2025-12-14T04:43:48+00:00"
         },
         {
+            "name": "razermerchantservices/payment",
+            "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/RazerMS/SDK-RazerMS_PHP.git",
+                "reference": "c6e293eebe74cb93b87dce84324bd4493e3f3acb"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/RazerMS/SDK-RazerMS_PHP/zipball/c6e293eebe74cb93b87dce84324bd4493e3f3acb",
+                "reference": "c6e293eebe74cb93b87dce84324bd4493e3f3acb",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.3"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9"
+            },
+            "default-branch": true,
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "RazerMerchantServices\\": "src/lib"
+                }
+            },
+            "scripts": {
+                "test": [
+                    "vendor/bin/phpunit --testdox -c phpunit.xml"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Safwan Hakim",
+                    "email": "hakim.yacob@razer.com"
+                }
+            ],
+            "description": "A PHP library for Razer Merchant Services payment gateway",
+            "homepage": "https://merchant.razer.com/",
+            "keywords": [
+                "payment",
+                "razer",
+                "razermerchantservices"
+            ],
+            "support": {
+                "source": "https://github.com/RazerMS/SDK-RazerMS_PHP/tree/main",
+                "issues": "https://github.com/RazerMS/SDK-RazerMS_PHP/issues"
+            },
+            "time": "2023-04-05T02:36:06+00:00"
+        },
+        {
             "name": "symfony/clock",
             "version": "v7.4.0",
             "source": {
@@ -6078,6 +6137,56 @@
             "time": "2025-12-02T11:56:42+00:00"
         },
         {
+            "name": "twilio/sdk",
+            "version": "8.11.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/twilio/twilio-php",
+                "reference": "7061dc4f080787660ae2a442db620e6afad99c5a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/twilio/twilio-php/zipball/7061dc4f080787660ae2a442db620e6afad99c5a",
+                "reference": "7061dc4f080787660ae2a442db620e6afad99c5a",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.0",
+                "guzzlehttp/guzzle": "^6.3 || ^7.0",
+                "phpunit/phpunit": ">=7.0 < 10"
+            },
+            "suggest": {
+                "guzzlehttp/guzzle": "An HTTP client to execute the API requests"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Twilio\\": "src/Twilio/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Twilio API Team",
+                    "email": "api@twilio.com"
+                }
+            ],
+            "description": "A PHP wrapper for Twilio's API",
+            "homepage": "https://github.com/twilio/twilio-php",
+            "keywords": [
+                "api",
+                "sms",
+                "twilio"
+            ],
+            "time": "2026-02-18T08:25:57+00:00"
+        },
+        {
             "name": "vlucas/phpdotenv",
             "version": "v5.6.3",
             "source": {
@@ -8613,7 +8722,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "razermerchantservices/payment": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
