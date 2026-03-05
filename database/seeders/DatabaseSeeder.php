@@ -22,9 +22,9 @@ class DatabaseSeeder extends Seeder
         );
 
         $user = User::updateOrCreate(
-            ['email' => 'daniel@example.com'],
+            ['email' => 'putrairawan993@gmail.com'],
             [
-                'name' => 'Ayobami Daniel', 
+                'name' => 'Putra Irawan', 
                 'password' => bcrypt('password'), 
                 'role' => 'user'
             ]

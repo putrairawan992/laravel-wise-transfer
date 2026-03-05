@@ -119,12 +119,14 @@
     async function loadModels() {
         try {
             statusText.innerText = 'Loading AI Models...';
-            // Assuming models are in public/models
-            await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-            await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-            await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
-            await faceapi.nets.faceExpressionNet.loadFromUri('/models');
-            await faceapi.nets.ssdMobilenetv1.loadFromUri('/models'); // Load SSD for better accuracy during registration
+            // Load models in parallel for faster startup
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+                faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+                faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
+                faceapi.nets.faceExpressionNet.loadFromUri('/models')
+                // Removed ssdMobilenetv1 to reduce load time
+            ]);
             
             isModelLoaded = true;
             loadingOverlay.classList.add('opacity-0', 'pointer-events-none');
@@ -146,10 +148,11 @@
                 labeledFaceDescriptors = new faceapi.LabeledFaceDescriptors('{{ auth()->user()->name }}', [descriptor]);
                 faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
                 registerBtn.classList.add('d-none');
+                startBtn.classList.remove('d-none'); // Show Start button if registered
                 startBtn.innerHTML = '<i class="bi bi-camera-video-fill me-2"></i> Start Recognition';
             } else {
                 registerBtn.classList.remove('d-none');
-                startBtn.classList.add('d-none'); // Force registration first
+                startBtn.classList.add('d-none'); // Hide Start button if not registered
             }
             
         } catch (error) {
@@ -172,6 +175,9 @@
         if (!isModelLoaded) return;
         
         startBtn.classList.add('d-none');
+        // Ensure Register button is also hidden
+        registerBtn.classList.add('d-none');
+        
         statusText.innerText = 'Starting Camera...';
         
         startCamera(false); // false = recognition mode

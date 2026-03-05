@@ -17,6 +17,7 @@ use App\Http\Controllers\CryptoController;
 
 use App\Http\Controllers\Admin\AdminEnquiryController;
 use App\Http\Controllers\Admin\IntegrationStatusController;
+use App\Http\Controllers\Admin\AdminWhatsAppController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -90,5 +91,9 @@ Route::middleware('auth')->group(function () {
 
         // Integration Status
         Route::get('/integrations', [IntegrationStatusController::class, 'index'])->name('integrations.index');
+
+        // WhatsApp Manager
+        Route::get('/whatsapp', [AdminWhatsAppController::class, 'index'])->name('whatsapp.index');
+        Route::post('/whatsapp/send', [AdminWhatsAppController::class, 'send'])->name('whatsapp.send');
     });
 });

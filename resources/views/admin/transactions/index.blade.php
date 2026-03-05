@@ -107,7 +107,7 @@
                                 </span>
                             </td>
                             <td class="pe-3 text-end">
-                                <span class="font-monospace small text-muted px-2 py-1 rounded border border-secondary border-opacity-25" style="background: rgba(255,255,255,0.03);">
+                                <span class="font-monospace small text-light px-2 py-1 rounded border border-secondary border-opacity-25" style="background: rgba(255,255,255,0.03);">
                                     {{ $transfer->recipient_account }}
                                 </span>
                             </td>

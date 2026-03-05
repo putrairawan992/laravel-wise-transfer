@@ -95,6 +95,9 @@
             <a href="{{ route('admin.integrations.index') }}" class="nav-link {{ request()->routeIs('admin.integrations.*') ? 'active' : '' }}">
                 <i class="bi bi-hdd-network"></i> Integrations
             </a>
+            <a href="{{ route('admin.whatsapp.index') }}" class="nav-link {{ request()->routeIs('admin.whatsapp.*') ? 'active' : '' }}">
+                <i class="bi bi-whatsapp"></i> WhatsApp Manager
+            </a>
 
             <div class="nav-section">Others</div>
             <a href="{{ route('admin.kyc.index') }}" class="nav-link {{ request()->routeIs('admin.kyc.*') ? 'active' : '' }}">
