@@ -52,13 +52,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/kyc', [KycController::class, 'update'])->name('kyc.update');
         Route::post('/kyc/submit', [KycController::class, 'submit'])->name('kyc.submit');
         Route::post('/kyc/face-verify', [KycController::class, 'faceVerify'])->name('kyc.faceVerify');
+        Route::post('/kyc/face-descriptor', [KycController::class, 'registerFaceDescriptor'])->name('kyc.registerFaceDescriptor');
         Route::get('/kyc/download/{type}', [KycController::class, 'download'])->name('kyc.download');
         Route::get('/kyc/view/{type}', [KycController::class, 'view'])->name('kyc.view');
         
         // Face Verification Page
-        Route::get('/kyc/face-recognition', function () {
-            return view('kyc.face-recognition');
-        })->name('kyc.face-recognition');
+        Route::get('/kyc/face-recognition', [KycController::class, 'faceRecognitionPage'])->name('kyc.face-recognition');
 
         // Payment Routes
         Route::get('/payment/checkout', [PaymentController::class, 'checkout'])->name('payment.checkout');
@@ -69,6 +68,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/enquiries/create', [EnquiryController::class, 'create'])->name('enquiries.create');
         Route::post('/enquiries', [EnquiryController::class, 'store'])->name('enquiries.store');
         Route::get('/enquiries/{enquiry}', [EnquiryController::class, 'show'])->name('enquiries.show');
+        Route::post('/enquiries/{enquiry}/reply', [EnquiryController::class, 'reply'])->name('enquiries.reply');
 
         // Crypto Routes
         Route::get('/crypto/wallet', [CryptoController::class, 'index'])->name('crypto.index');
@@ -87,6 +87,7 @@ Route::middleware('auth')->group(function () {
         // Admin Enquiry Routes
         Route::get('/enquiries', [AdminEnquiryController::class, 'index'])->name('enquiries.index');
         Route::get('/enquiries/{enquiry}', [AdminEnquiryController::class, 'show'])->name('enquiries.show');
+        Route::post('/enquiries/{enquiry}/reply', [AdminEnquiryController::class, 'reply'])->name('enquiries.reply');
         Route::patch('/enquiries/{enquiry}/status', [AdminEnquiryController::class, 'updateStatus'])->name('enquiries.updateStatus');
 
         // Integration Status

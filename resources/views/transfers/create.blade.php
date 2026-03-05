@@ -22,19 +22,19 @@
                     @csrf
                     <div class="mb-3">
                         <label for="recipient_name" class="form-label">Recipient Name</label>
-                        <input type="text" class="form-control" id="recipient_name" name="recipient_name" value="{{ old('recipient_name') }}" required>
+                        <input type="text" class="form-control" id="recipient_name" name="recipient_name" value="{{ old('recipient_name') }}" placeholder="e.g. Michael Scott" required>
                     </div>
                     
                     <div class="mb-3">
                         <label for="recipient_account" class="form-label">Recipient Account / IBAN</label>
-                        <input type="text" class="form-control" id="recipient_account" name="recipient_account" value="{{ old('recipient_account') }}" required>
+                        <input type="text" class="form-control" id="recipient_account" name="recipient_account" value="{{ old('recipient_account') }}" placeholder="e.g. 1234567890 or IBAN" required>
                         <div class="form-text text-muted"><i class="bi bi-shield-lock"></i> We will store this encrypted; only masked values are shown later.</div>
                     </div>
                     
                     <div class="row mb-3">
                         <div class="col-md-8">
                             <label for="amount" class="form-label">Amount</label>
-                            <input type="number" step="0.01" class="form-control" id="amount" name="amount" value="{{ old('amount') }}" min="0.01" max="{{ $account->balance }}" required>
+                            <input type="number" step="0.01" class="form-control" id="amount" name="amount" value="{{ old('amount') }}" min="0.01" max="{{ $account->balance }}" placeholder="0.00" required>
                             @error('amount')
                                 <div class="text-danger small mt-1">{{ $message }}</div>
                             @enderror
@@ -49,7 +49,7 @@
                     
                     <div class="mb-4">
                         <label for="note" class="form-label">Note (Optional)</label>
-                        <textarea class="form-control" id="note" name="note" rows="2">{{ old('note') }}</textarea>
+                        <textarea class="form-control" id="note" name="note" rows="2" placeholder="What is this transfer for? (e.g. Rent, Dinner)">{{ old('note') }}</textarea>
                     </div>
                     
                     <div class="d-flex justify-content-end gap-2">

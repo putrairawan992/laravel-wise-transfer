@@ -51,18 +51,61 @@
                 </div>
                 
                 <div class="card-body p-4 bg-dark bg-opacity-50">
-                    <div class="message-content text-light lh-lg" style="white-space: pre-wrap;">{{ $enquiry->message }}</div>
+                    <div class="message-content text-light lh-lg mb-5" style="white-space: pre-wrap;">{{ $enquiry->message }}</div>
+
+                    <!-- Replies Section -->
+                    @if($enquiry->replies->count() > 0)
+                        <h6 class="text-secondary text-uppercase small fw-bold mb-4">Conversation History</h6>
+                        <div class="replies-container d-flex flex-column gap-3 mb-4">
+                            @foreach($enquiry->replies as $reply)
+                                <div class="d-flex {{ $reply->user_id === auth()->id() ? 'justify-content-end' : 'justify-content-start' }}">
+                                    <div class="card border-0 {{ $reply->user_id === auth()->id() ? 'bg-primary text-white' : 'bg-dark-card border border-secondary border-opacity-25' }}" style="max-width: 80%; border-radius: 1rem;">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-2 gap-3">
+                                                <small class="fw-bold {{ $reply->user_id === auth()->id() ? 'text-white-50' : 'text-primary' }}">
+                                                    {{ $reply->user->name }} ({{ $reply->user->role }})
+                                                </small>
+                                                <small class="{{ $reply->user_id === auth()->id() ? 'text-white-50' : 'text-secondary' }}" style="font-size: 0.7rem;">
+                                                    {{ $reply->created_at->format('d M, H:i') }}
+                                                </small>
+                                            </div>
+                                            <p class="mb-0 {{ $reply->user_id === auth()->id() ? 'text-white' : 'text-light' }}" style="white-space: pre-wrap;">{{ $reply->message }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
 
                 <div class="card-footer bg-transparent border-top border-secondary border-opacity-10 p-4">
-                    <h6 class="text-secondary text-uppercase small fw-bold mb-3">Quick Actions</h6>
+                    <h6 class="text-secondary text-uppercase small fw-bold mb-3">Reply to User</h6>
+                    
+                    <form action="{{ route('admin.enquiries.reply', $enquiry) }}" method="POST" class="mb-4">
+                        @csrf
+                        <div class="mb-3">
+                            <textarea name="message" class="form-control bg-dark text-light border-secondary border-opacity-25 focus-none" rows="3" placeholder="Type your reply here..." required></textarea>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-secondary small">
+                                <i class="bi bi-info-circle me-1"></i> User will see this reply in their dashboard.
+                            </div>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
+                                <i class="bi bi-send-fill me-2"></i> Send Reply
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr class="border-secondary border-opacity-10 my-4">
+
+                    <h6 class="text-secondary text-uppercase small fw-bold mb-3">External Actions</h6>
                     <div class="d-flex gap-2">
-                        <a href="mailto:{{ $enquiry->user->email }}" class="btn btn-primary rounded-pill px-4">
-                            <i class="bi bi-reply-fill me-2"></i> Reply via Email
+                        <a href="mailto:{{ $enquiry->user->email }}" class="btn btn-outline-secondary rounded-pill px-4 text-light border-opacity-25 hover-bg-secondary">
+                            <i class="bi bi-envelope me-2"></i> Email
                         </a>
                         @if($enquiry->user && $enquiry->user->mobile)
                             <a href="https://wa.me/{{ $enquiry->user->mobile }}" target="_blank" class="btn btn-success rounded-pill px-4">
-                                <i class="bi bi-whatsapp me-2"></i> Chat on WhatsApp
+                                <i class="bi bi-whatsapp me-2"></i> WhatsApp
                             </a>
                         @endif
                     </div>

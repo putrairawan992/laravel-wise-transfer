@@ -119,13 +119,12 @@
     async function loadModels() {
         try {
             statusText.innerText = 'Loading AI Models...';
-            // Load models in parallel for faster startup
+            // Use local models for reliability
             await Promise.all([
                 faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
                 faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
                 faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
                 faceapi.nets.faceExpressionNet.loadFromUri('/models')
-                // Removed ssdMobilenetv1 to reduce load time
             ]);
             
             isModelLoaded = true;
@@ -141,19 +140,20 @@
             
             startBtn.classList.remove('d-none');
             
-            // Check if user is already registered (simulated)
-            const storedDescriptor = localStorage.getItem('userFaceDescriptor');
-            if (storedDescriptor) {
-                const descriptor = new Float32Array(JSON.parse(storedDescriptor));
-                labeledFaceDescriptors = new faceapi.LabeledFaceDescriptors('{{ auth()->user()->name }}', [descriptor]);
+            // Check if user has registered face (from Server - Optimized Variable)
+            @if($face_descriptor)
+                const serverDescriptor = @json($face_descriptor);
+                const descriptor = new Float32Array(JSON.parse(serverDescriptor));
+                labeledFaceDescriptors = new faceapi.LabeledFaceDescriptors('{{ $user_name }}', [descriptor]);
                 faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
+                
                 registerBtn.classList.add('d-none');
-                startBtn.classList.remove('d-none'); // Show Start button if registered
+                startBtn.classList.remove('d-none');
                 startBtn.innerHTML = '<i class="bi bi-camera-video-fill me-2"></i> Start Recognition';
-            } else {
+            @else
                 registerBtn.classList.remove('d-none');
-                startBtn.classList.add('d-none'); // Hide Start button if not registered
-            }
+                startBtn.classList.add('d-none');
+            @endif
             
         } catch (error) {
             console.error(error);
@@ -175,7 +175,7 @@
         if (!isModelLoaded) return;
         
         startBtn.classList.add('d-none');
-        // Ensure Register button is also hidden
+        // Ensure Register button is also hidden when starting recognition
         registerBtn.classList.add('d-none');
         
         statusText.innerText = 'Starting Camera...';
@@ -218,32 +218,50 @@
         const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
         
         if (detection) {
-            // Save descriptor
-            localStorage.setItem('userFaceDescriptor', JSON.stringify(Array.from(detection.descriptor)));
+            // Convert descriptor to JSON string
+            const descriptorJson = JSON.stringify(Array.from(detection.descriptor));
             
-            // Update state
-            labeledFaceDescriptors = new faceapi.LabeledFaceDescriptors('{{ auth()->user()->name }}', [detection.descriptor]);
-            faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
-            
-            // Stop camera
-            video.pause();
-            const stream = video.srcObject;
-            if (stream) {
-                const tracks = stream.getTracks();
-                tracks.forEach(track => track.stop());
+            // Send to Server
+            try {
+                const response = await fetch('{{ route("kyc.registerFaceDescriptor") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ descriptor: descriptorJson })
+                });
+                
+                if (!response.ok) throw new Error('Failed to save face descriptor');
+                
+                // Update local state
+                labeledFaceDescriptors = new faceapi.LabeledFaceDescriptors('{{ auth()->user()->name }}', [detection.descriptor]);
+                faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
+                
+                // Stop camera
+                video.pause();
+                const stream = video.srcObject;
+                if (stream) {
+                    const tracks = stream.getTracks();
+                    tracks.forEach(track => track.stop());
+                }
+                
+                // Show success
+                statusText.innerText = 'Registration Complete!';
+                statusBadge.classList.remove('spinner-grow');
+                statusBadge.classList.add('bg-success');
+                
+                alert('Face Registered Successfully! You can now use Face Verification.');
+                
+                // Reset UI
+                faceFrame.classList.add('d-none');
+                startBtn.classList.remove('d-none');
+                startBtn.innerHTML = '<i class="bi bi-camera-video-fill me-2"></i> Start Recognition';
+                
+            } catch (err) {
+                console.error(err);
+                alert('Failed to register face. Please try again.');
             }
-            
-            // Show success
-            statusText.innerText = 'Registration Complete!';
-            statusBadge.classList.remove('spinner-grow');
-            statusBadge.classList.add('bg-success');
-            
-            alert('Face Registered Successfully! You can now use Face Verification.');
-            
-            // Reset UI
-            faceFrame.classList.add('d-none');
-            startBtn.classList.remove('d-none');
-            startBtn.innerHTML = '<i class="bi bi-camera-video-fill me-2"></i> Start Recognition';
             
         } else {
             requestAnimationFrame(() => detectForRegistration(displaySize));

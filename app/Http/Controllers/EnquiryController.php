@@ -39,6 +39,27 @@ class EnquiryController extends Controller
         if ($enquiry->user_id !== auth()->id()) {
             abort(403);
         }
+        $enquiry->load(['replies.user']);
         return view('enquiries.show', compact('enquiry'));
+    }
+
+    public function reply(Request $request, Enquiry $enquiry)
+    {
+        if ($enquiry->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'message' => 'required|string',
+        ]);
+
+        $enquiry->replies()->create([
+            'user_id' => auth()->id(),
+            'message' => $request->message,
+        ]);
+
+        $enquiry->update(['status' => 'open']); // Re-open if user replies
+
+        return back()->with('success', 'Reply sent successfully.');
     }
 }

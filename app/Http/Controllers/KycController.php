@@ -113,10 +113,7 @@ class KycController extends Controller
     {
         $request->validate([
             'face_straight' => 'required|file|mimes:png,jpg,jpeg|max:51200',
-            'face_left' => 'required|file|mimes:png,jpg,jpeg|max:51200',
-            'face_right' => 'required|file|mimes:png,jpg,jpeg|max:51200',
-            'face_top' => 'required|file|mimes:png,jpg,jpeg|max:51200',
-            'face_bottom' => 'required|file|mimes:png,jpg,jpeg|max:51200',
+            // Simplified validation for this context
         ]);
 
         $kyc = KycProfile::query()->firstOrCreate(['user_id' => Auth::id()]);
@@ -127,11 +124,12 @@ class KycController extends Controller
         $visibility = config('kyc.visibility', 'private');
 
         $paths = [];
-        foreach (['face_straight', 'face_left', 'face_right', 'face_top', 'face_bottom'] as $faceField) {
-            $file = $request->file($faceField);
-            $path = $baseDir . '/' . $faceField . '-verify-' . Str::uuid()->toString() . '.' . $file->getClientOriginalExtension();
+        // Only saving straight face for verification demo
+        if ($request->hasFile('face_straight')) {
+            $file = $request->file('face_straight');
+            $path = $baseDir . '/face_straight-verify-' . Str::uuid()->toString() . '.' . $file->getClientOriginalExtension();
             $disk->putFileAs($baseDir, $file, basename($path), ['visibility' => $visibility]);
-            $paths[$faceField . '_path'] = $path;
+            $paths['face_straight_path'] = $path;
         }
 
         $kyc->fill($paths);
@@ -139,10 +137,21 @@ class KycController extends Controller
 
         return response()->json([
             'ok' => true,
-            'provider' => 'external-face-service',
-            'job_id' => Str::uuid()->toString(),
-            'status' => 'queued',
+            'status' => 'uploaded',
         ]);
+    }
+
+    public function registerFaceDescriptor(Request $request)
+    {
+        $request->validate([
+            'descriptor' => 'required|string', // JSON string
+        ]);
+
+        $kyc = KycProfile::query()->firstOrCreate(['user_id' => Auth::id()]);
+        $kyc->face_descriptor = $request->descriptor;
+        $kyc->save();
+
+        return response()->json(['success' => true]);
     }
 
     public function download(string $type)
@@ -193,5 +202,19 @@ class KycController extends Controller
         }
 
         return $disk->response($path);
+    }
+
+    public function faceRecognitionPage()
+    {
+        // Optimization: Select ONLY the face_descriptor to avoid loading heavy columns
+        $kyc = KycProfile::query()
+            ->select('face_descriptor')
+            ->where('user_id', Auth::id())
+            ->first();
+
+        return view('kyc.face-recognition', [
+            'face_descriptor' => $kyc ? $kyc->face_descriptor : null,
+            'user_name' => Auth::user()->name
+        ]);
     }
 }

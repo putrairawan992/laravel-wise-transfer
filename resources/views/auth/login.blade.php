@@ -30,7 +30,7 @@
                         <label for="email" class="form-label fw-semibold text-secondary small text-uppercase">Email address</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-envelope"></i></span>
-                            <input type="email" class="form-control bg-light border-start-0 ps-0 py-2" id="email" name="email" value="{{ old('email') }}" placeholder="name@example.com" required autofocus>
+                            <input type="email" class="form-control bg-light border-start-0 ps-0 py-2" id="email" name="email" value="{{ old('email') }}" placeholder="e.g. john.doe@example.com" required autofocus>
                         </div>
                     </div>
                     <div class="mb-4">
@@ -39,7 +39,7 @@
                         </div>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-lock"></i></span>
-                            <input type="password" class="form-control bg-light border-start-0 ps-0 py-2" id="password" name="password" placeholder="Enter your password" required>
+                            <input type="password" class="form-control bg-light border-start-0 ps-0 py-2" id="password" name="password" placeholder="Enter your secure password" required>
                         </div>
                     </div>
                     

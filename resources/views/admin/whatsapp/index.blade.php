@@ -27,7 +27,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-secondary small text-uppercase fw-bold">Message</label>
-                            <textarea name="message" rows="4" class="form-control bg-dark text-light border-secondary border-opacity-25 focus-none" placeholder="Type your message here..."></textarea>
+                            <textarea name="message" rows="4" class="form-control bg-dark text-light border-secondary border-opacity-25 focus-none" placeholder="Enter your message here (e.g. System Maintenance Notification)"></textarea>
                         </div>
                         <div class="text-end">
                             <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold">

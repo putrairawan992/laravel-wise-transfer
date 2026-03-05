@@ -79,11 +79,11 @@
                         </div>
                         <div class="col-md-8">
                             <label class="form-label fw-semibold text-secondary small text-uppercase">Address</label>
-                            <input type="text" name="address" class="form-control form-control-lg" value="{{ old('address', $kyc->address_enc) }}" placeholder="Full residential address" required @disabled($readOnly)>
+                            <input type="text" name="address" class="form-control form-control-lg" value="{{ old('address', $kyc->address_enc) }}" placeholder="e.g. 123 Main Street, New York, NY 10001" required @disabled($readOnly)>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold text-secondary small text-uppercase">Contact Number</label>
-                            <input type="text" name="contact_number" class="form-control form-control-lg" value="{{ old('contact_number', $kyc->contact_number) }}" placeholder="+1 234 567 890" required @disabled($readOnly)>
+                            <input type="text" name="contact_number" class="form-control form-control-lg" value="{{ old('contact_number', $kyc->contact_number) }}" placeholder="e.g. +1 234 567 890" required @disabled($readOnly)>
                         </div>
                     </div>
                 </div>
@@ -99,7 +99,7 @@
                         <!-- Identity Document -->
                         <div class="col-12">
                             <label class="form-label fw-semibold text-secondary small text-uppercase">Identity Document Number (IC / KTP / Passport)</label>
-                            <input type="text" name="document_number" class="form-control form-control-lg mb-2" value="{{ old('document_number', $kyc->document_number_enc) }}" placeholder="Enter document ID number" required @disabled($readOnly)>
+                            <input type="text" name="document_number" class="form-control form-control-lg mb-2" value="{{ old('document_number', $kyc->document_number_enc) }}" placeholder="e.g. A12345678 or 3171234567890001" required @disabled($readOnly)>
                         </div>
                         
                         <div class="col-md-4">
