@@ -1,0 +1,16 @@
+{
+  "name": "face-worker",
+  "version": "1.0.0",
+  "description": "Background worker for Laravel Face Recognition",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs": "^4.17.0",
+    "canvas": "^2.11.2",
+    "face-api.js": "^0.22.2",
+    "mysql2": "^3.9.2",
+    "dotenv": "^16.4.5"
+  }
+}
