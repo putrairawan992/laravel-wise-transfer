@@ -70,6 +70,27 @@ A comprehensive fintech dashboard featuring money transfers, crypto wallet check
     php artisan serve
     ```
 
+## Face Dataset Import (Optional)
+
+Jika Anda ingin mengimpor dataset wajah dalam jumlah besar (contoh: 10k gambar), jalankan worker Node.js dan command Laravel berikut:
+
+1.  **Install dependency worker**
+    ```bash
+    cd scripts/face-worker
+    npm install
+    ```
+
+2.  **Jalankan import**
+    ```bash
+    php artisan face:import-dataset "C:/Path/To/Dataset"
+    ```
+
+Struktur folder dataset harus mengikuti pola:
+```
+1234-Nama Lengkap/
+  image1.jpg
+```
+
 ## Default Credentials
 
 **Admin Account:**
