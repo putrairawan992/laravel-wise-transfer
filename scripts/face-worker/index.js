@@ -71,11 +71,32 @@ async function main() {
 
             // Detect Face
             const imgPath = path.join(userDir, imgFile);
-            const img = await loadImage(imgPath);
-            const detection = await faceapi
-                .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
-                .withFaceLandmarks()
-                .withFaceDescriptor();
+            let img;
+            try {
+                img = await loadImage(imgPath);
+            } catch (e) {
+                console.log(`⚠️ Failed to load image for ${userName} (${imgFile})`);
+                failed++;
+                continue;
+            }
+
+            if (!img || !img.width || !img.height) {
+                console.log(`⚠️ Invalid image (0x0) for ${userName} (${imgFile})`);
+                failed++;
+                continue;
+            }
+
+            let detection;
+            try {
+                detection = await faceapi
+                    .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+            } catch (e) {
+                console.log(`⚠️ Face detection error for ${userName} (${imgFile})`);
+                failed++;
+                continue;
+            }
 
             if (!detection) {
                 console.log(`⚠️ No face detected for ${userName} (${imgFile})`);
