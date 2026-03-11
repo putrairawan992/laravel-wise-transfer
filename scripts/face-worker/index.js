@@ -1,6 +1,6 @@
-const tf = require('@tensorflow/tfjs'); // Load TFJS + register kernels/backends
-global.tf = tf; // Ensure face-api.js uses the same TFJS instance (avoid duplicated tfjs-core)
-const faceapi = require('face-api.js');
+const tf = require('@tensorflow/tfjs');
+require('@tensorflow/tfjs-backend-wasm');
+const faceapi = require('@vladmandic/face-api/dist/face-api.node-wasm.js');
 const { Canvas, Image, ImageData, loadImage } = require('canvas');
 const fs = require('fs');
 const path = require('path');
@@ -40,6 +40,8 @@ async function main() {
     console.log("✅ DB Connected");
 
     // 2. Load Models
+    await tf.setBackend('wasm');
+    await tf.ready();
     await faceapi.nets.tinyFaceDetector.loadFromDisk(MODELS_PATH);
     await faceapi.nets.faceLandmark68Net.loadFromDisk(MODELS_PATH);
     await faceapi.nets.faceRecognitionNet.loadFromDisk(MODELS_PATH);
