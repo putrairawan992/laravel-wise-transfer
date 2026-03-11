@@ -2,6 +2,7 @@ const tf = require('@tensorflow/tfjs');
 require('@tensorflow/tfjs-backend-wasm');
 const faceapi = require('@vladmandic/face-api/dist/face-api.node-wasm.js');
 const { Canvas, Image, ImageData, loadImage } = require('canvas');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const mysql = require('mysql2/promise');
@@ -12,6 +13,19 @@ faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
 
 // Constants
 const MODELS_PATH = path.join(__dirname, '../../public/models');
+
+function slugify(value) {
+    return String(value)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+}
+
+function buildImportEmail(folder, userName) {
+    const slug = slugify(userName).slice(0, 50) || 'user';
+    const hash = crypto.createHash('sha1').update(String(folder)).digest('hex').slice(0, 10);
+    return `${slug}.${hash}@import.local`;
+}
 
 async function main() {
     const datasetPath = process.argv[2];
@@ -66,57 +80,74 @@ async function main() {
     for (const folder of folders) {
         try {
             // Parse Folder Name: "1234-John Doe" -> ID: 1234, Name: John Doe
-            const parts = folder.split('-');
-            const userIdRaw = parts[0].trim();
-            const userName = parts.slice(1).join('-').trim();
-            const userEmail = `${userIdRaw}@example.com`; // Unique Email Dummy
+            const match = String(folder).match(/^(\d+)\s*-\s*(.+)$/);
+            const userName = (match ? match[2] : folder).trim();
+            const userEmail = buildImportEmail(folder, userName);
 
             // Find Image
             const userDir = path.join(datasetRoot, folder);
             const files = fs.readdirSync(userDir);
-            const imgFile = files.find(f => f.match(/\.(jpg|jpeg|png)$/i));
+            const imgFiles = files
+                .filter(f => f.match(/\.(jpg|jpeg|png)$/i))
+                .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
-            if (!imgFile) {
+            if (imgFiles.length === 0) {
                 console.log(`⚠️ No image in ${folder}`);
                 continue;
             }
 
             // Detect Face
-            const imgPath = path.join(userDir, imgFile);
-            let img;
-            try {
-                img = await loadImage(imgPath);
-            } catch (e) {
-                console.log(`⚠️ Failed to load image for ${userName} (${imgFile})`);
+            const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.2 });
+            let bestDetection = null;
+            let bestScore = -1;
+            let bestImgPath = null;
+            let bestImgFile = null;
+
+            for (const candidate of imgFiles) {
+                const candidatePath = path.join(userDir, candidate);
+                let img;
+                try {
+                    img = await loadImage(candidatePath);
+                } catch (e) {
+                    continue;
+                }
+
+                if (!img || !img.width || !img.height) {
+                    continue;
+                }
+
+                let detection;
+                try {
+                    detection = await faceapi
+                        .detectSingleFace(img, options)
+                        .withFaceLandmarks()
+                        .withFaceDescriptor();
+                } catch (e) {
+                    continue;
+                }
+
+                if (!detection) {
+                    continue;
+                }
+
+                const score = detection.detection?.score ?? detection.score ?? 0;
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestDetection = detection;
+                    bestImgPath = candidatePath;
+                    bestImgFile = candidate;
+                }
+            }
+
+            if (!bestDetection || !bestImgPath) {
+                console.log(`⚠️ No face detected for ${userName} (${imgFiles.join(', ')})`);
                 failed++;
                 continue;
             }
 
-            if (!img || !img.width || !img.height) {
-                console.log(`⚠️ Invalid image (0x0) for ${userName} (${imgFile})`);
-                failed++;
-                continue;
-            }
-
-            let detection;
-            try {
-                detection = await faceapi
-                    .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
-                    .withFaceLandmarks()
-                    .withFaceDescriptor();
-            } catch (e) {
-                console.log(`⚠️ Face detection error for ${userName} (${imgFile})`);
-                failed++;
-                continue;
-            }
-
-            if (!detection) {
-                console.log(`⚠️ No face detected for ${userName} (${imgFile})`);
-                failed++;
-                continue;
-            }
-
-            const descriptor = JSON.stringify(Array.from(detection.descriptor));
+            const imgPath = bestImgPath;
+            const imgFile = bestImgFile ?? imgFiles[0];
+            const descriptor = JSON.stringify(Array.from(bestDetection.descriptor));
 
             // DB Operations
             // A. Create/Get User (Using UUID or ID?)
@@ -127,6 +158,10 @@ async function main() {
             if (users.length > 0) {
                 userId = users[0].id;
             } else {
+                const [nameMatches] = await connection.execute('SELECT id FROM users WHERE name = ? LIMIT 2', [userName]);
+                if (nameMatches.length === 1) {
+                    userId = nameMatches[0].id;
+                } else {
                 // Insert New User
                 // Assuming UUID is primary key. If Auto Increment, remove UUID()
                 const [result] = await connection.execute(
@@ -138,6 +173,7 @@ async function main() {
                 // Get the ID back
                 const [newUser] = await connection.execute('SELECT id FROM users WHERE email = ?', [userEmail]);
                 userId = newUser[0].id;
+                }
             }
 
             // B. Upsert KYC Profile
@@ -150,7 +186,7 @@ async function main() {
                 );
             } else {
                 await connection.execute(
-                    'INSERT INTO kyc_profiles (user_id, face_descriptor, face_straight_path, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())',
+                    'INSERT INTO kyc_profiles (id, user_id, face_descriptor, face_straight_path, created_at, updated_at) VALUES (UUID(), ?, ?, ?, NOW(), NOW())',
                     [userId, descriptor, imgPath]
                 );
             }
