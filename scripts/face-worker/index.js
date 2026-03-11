@@ -1,4 +1,5 @@
-require('@tensorflow/tfjs'); // Load TFJS CPU backend
+const tf = require('@tensorflow/tfjs'); // Load TFJS + register kernels/backends
+global.tf = tf; // Ensure face-api.js uses the same TFJS instance (avoid duplicated tfjs-core)
 const faceapi = require('face-api.js');
 const { Canvas, Image, ImageData, loadImage } = require('canvas');
 const fs = require('fs');
@@ -45,7 +46,16 @@ async function main() {
     console.log("✅ Models Loaded");
 
     // 3. Scan Folders
-    const folders = fs.readdirSync(datasetPath).filter(f => fs.statSync(path.join(datasetPath, f)).isDirectory());
+    let datasetRoot = datasetPath;
+    let folders = fs
+        .readdirSync(datasetPath)
+        .filter(f => fs.statSync(path.join(datasetPath, f)).isDirectory());
+
+    if (folders.length === 0) {
+        datasetRoot = path.dirname(datasetPath);
+        folders = [path.basename(datasetPath)];
+    }
+
     console.log(`📊 Found ${folders.length} user folders.`);
 
     let processed = 0;
@@ -60,7 +70,7 @@ async function main() {
             const userEmail = `${userIdRaw}@example.com`; // Unique Email Dummy
 
             // Find Image
-            const userDir = path.join(datasetPath, folder);
+            const userDir = path.join(datasetRoot, folder);
             const files = fs.readdirSync(userDir);
             const imgFile = files.find(f => f.match(/\.(jpg|jpeg|png)$/i));
 

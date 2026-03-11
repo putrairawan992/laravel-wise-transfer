@@ -46,6 +46,7 @@ class ImportFaceDataset extends Command
         
         // Command: node scripts/face-worker/index.js "C:/Path/To/Dataset"
         $process = new Process(['node', $scriptPath, $path]);
+        $process->setWorkingDirectory(base_path('scripts/face-worker'));
         $process->setTimeout(3600); // 1 hour timeout
         $process->setIdleTimeout(300); // 5 minutes idle timeout
         
