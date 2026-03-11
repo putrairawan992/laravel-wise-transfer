@@ -6,7 +6,8 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const mysql = require('mysql2/promise');
-require('dotenv').config({ path: '../../.env' }); // Adjust relative path to .env
+const ENV_PATH = path.join(__dirname, '../../.env');
+require('dotenv').config({ path: ENV_PATH });
 
 // Setup Environment
 faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
@@ -43,14 +44,19 @@ async function main() {
     console.log("🚀 Starting Face Importer Worker...");
     console.log(`📂 Dataset: ${datasetPath}`);
     console.log(`🧠 Models: ${MODELS_PATH}`);
+    console.log(`🧾 Env: ${ENV_PATH} (${fs.existsSync(ENV_PATH) ? 'found' : 'missing'})`);
 
     // 1. Connect DB
+    const dbHost = process.env.DB_HOST || '127.0.0.1';
+    const dbUser = process.env.DB_USERNAME || 'root';
+    const dbDatabase = process.env.DB_DATABASE || 'laravel_transfer';
     const connection = await mysql.createConnection({
-        host: process.env.DB_HOST || '127.0.0.1',
-        user: process.env.DB_USERNAME || 'root',
+        host: dbHost,
+        user: dbUser,
         password: process.env.DB_PASSWORD || '',
-        database: process.env.DB_DATABASE || 'laravel_transfer'
+        database: dbDatabase
     });
+    console.log(`🗄️ DB: ${dbUser}@${dbHost}/${dbDatabase}`);
     console.log("✅ DB Connected");
 
     // 2. Load Models
@@ -154,6 +160,7 @@ async function main() {
             // Check if user exists
             const [users] = await connection.execute('SELECT id FROM users WHERE email = ?', [userEmail]);
             let userId;
+            let userAction = 'existing_by_email';
 
             if (users.length > 0) {
                 userId = users[0].id;
@@ -161,6 +168,7 @@ async function main() {
                 const [nameMatches] = await connection.execute('SELECT id FROM users WHERE name = ? LIMIT 2', [userName]);
                 if (nameMatches.length === 1) {
                     userId = nameMatches[0].id;
+                    userAction = 'existing_by_name';
                 } else {
                 // Insert New User
                 // Assuming UUID is primary key. If Auto Increment, remove UUID()
@@ -169,6 +177,7 @@ async function main() {
                      VALUES (UUID(), ?, ?, ?, 'user', NOW(), NOW())`,
                     [userName, userEmail, '$2y$12$DefAuLtPaSsWoRdHaSh...'] // Default password hash
                 );
+                userAction = 'created';
                 
                 // Get the ID back
                 const [newUser] = await connection.execute('SELECT id FROM users WHERE email = ?', [userEmail]);
@@ -178,6 +187,7 @@ async function main() {
 
             // B. Upsert KYC Profile
             const [kyc] = await connection.execute('SELECT id FROM kyc_profiles WHERE user_id = ?', [userId]);
+            let kycAction = 'updated';
             
             if (kyc.length > 0) {
                 await connection.execute(
@@ -185,11 +195,14 @@ async function main() {
                     [descriptor, imgPath, userId] // Saving local path for reference
                 );
             } else {
+                kycAction = 'inserted';
                 await connection.execute(
                     'INSERT INTO kyc_profiles (id, user_id, face_descriptor, face_straight_path, created_at, updated_at) VALUES (UUID(), ?, ?, ?, NOW(), NOW())',
                     [userId, descriptor, imgPath]
                 );
             }
+
+            console.log(`✅ Saved: ${userName} | ${userAction} | ${kycAction} | user_id=${userId} | img=${imgFile}`);
 
             processed++;
             if (processed % 10 === 0) console.log(`✅ Processed ${processed}/${folders.length}...`);
