@@ -111,11 +111,6 @@ class KycController extends Controller
 
     public function faceVerify(Request $request)
     {
-        $request->validate([
-            'face_straight' => 'required|file|mimes:png,jpg,jpeg|max:51200',
-            // Simplified validation for this context
-        ]);
-
         $kyc = KycProfile::query()->firstOrCreate(['user_id' => Auth::id()]);
         $baseDir = 'private/kyc/' . Auth::id();
 
@@ -123,8 +118,51 @@ class KycController extends Controller
         $disk = Storage::disk($diskName);
         $visibility = config('kyc.visibility', 'private');
 
+        $imageDataUrl = $request->input('image') ?? ($request->json()?->get('image'));
+        if (is_string($imageDataUrl) && str_starts_with($imageDataUrl, 'data:image/')) {
+            $semicolonPos = strpos($imageDataUrl, ';');
+            $commaPos = strpos($imageDataUrl, ',');
+            $mimeSubType = $semicolonPos !== false ? substr($imageDataUrl, 11, $semicolonPos - 11) : '';
+            $ext = match (strtolower($mimeSubType)) {
+                'jpeg' => 'jpg',
+                'jpg' => 'jpg',
+                'png' => 'png',
+                default => null,
+            };
+            if ($ext === null || $commaPos === false) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unsupported image format',
+                ], 422);
+            }
+
+            $base64 = substr($imageDataUrl, $commaPos + 1);
+            $binary = base64_decode($base64);
+            if ($binary === false) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid image payload',
+                ], 422);
+            }
+
+            $fileName = 'face_straight-verify-' . Str::uuid()->toString() . '.' . $ext;
+            $path = $baseDir . '/' . $fileName;
+            $disk->put($path, $binary, ['visibility' => $visibility]);
+
+            $kyc->fill(['face_straight_path' => $path]);
+            $kyc->save();
+
+            return response()->json([
+                'success' => true,
+                'status' => 'uploaded',
+            ]);
+        }
+
+        $request->validate([
+            'face_straight' => 'required|file|mimes:png,jpg,jpeg|max:51200',
+        ]);
+
         $paths = [];
-        // Only saving straight face for verification demo
         if ($request->hasFile('face_straight')) {
             $file = $request->file('face_straight');
             $path = $baseDir . '/face_straight-verify-' . Str::uuid()->toString() . '.' . $file->getClientOriginalExtension();
@@ -136,7 +174,7 @@ class KycController extends Controller
         $kyc->save();
 
         return response()->json([
-            'ok' => true,
+            'success' => true,
             'status' => 'uploaded',
         ]);
     }

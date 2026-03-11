@@ -39,7 +39,7 @@ async function main() {
     console.log("✅ DB Connected");
 
     // 2. Load Models
-    await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODELS_PATH);
+    await faceapi.nets.tinyFaceDetector.loadFromDisk(MODELS_PATH);
     await faceapi.nets.faceLandmark68Net.loadFromDisk(MODELS_PATH);
     await faceapi.nets.faceRecognitionNet.loadFromDisk(MODELS_PATH);
     console.log("✅ Models Loaded");
@@ -72,7 +72,10 @@ async function main() {
             // Detect Face
             const imgPath = path.join(userDir, imgFile);
             const img = await loadImage(imgPath);
-            const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+            const detection = await faceapi
+                .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceDescriptor();
 
             if (!detection) {
                 console.log(`⚠️ No face detected for ${userName} (${imgFile})`);
