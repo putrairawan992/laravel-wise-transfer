@@ -1,0 +1,11 @@
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+</IfModule>
+
+<FilesMatch "shard[0-9]+$">
+    ForceType application/octet-stream
+</FilesMatch>
+
+<FilesMatch "\.json$">
+    ForceType application/json
+</FilesMatch>
