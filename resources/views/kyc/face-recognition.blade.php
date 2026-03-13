@@ -282,25 +282,41 @@
                 // Match faces
                 const results = resizedDetections.map(d => faceMatcher.findBestMatch(d.descriptor));
                 
+                // Find if we have a match
+                const match = results.find(r => r.label !== 'unknown');
+                
+                if (match) {
+                    // Known user detected
+                    statusText.innerText = '';
+                    statusBadge.classList.remove('text-secondary', 'text-danger', 'spinner-grow', 'bg-dark', 'border-white');
+                    statusBadge.classList.add('bg-success', 'text-white', 'border-success');
+                    statusBadge.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ' + match.label;
+                    
+                    captureBtn.disabled = false;
+                    faceFrame.querySelector('div').classList.replace('border-white', 'border-success');
+                    faceFrame.querySelector('div').style.boxShadow = '0 0 0 9999px rgba(0,0,0,0.7)';
+                    
+                    actionFooter.classList.remove('opacity-0', 'pointer-events-none');
+                    actionFooter.classList.add('slide-up-fade');
+                } else {
+                    // Only unknown faces detected
+                    statusText.innerText = 'Unknown Face';
+                    statusBadge.classList.remove('bg-success', 'text-white', 'border-success');
+                    statusBadge.classList.add('text-danger', 'bg-dark', 'border-white');
+                    statusBadge.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>';
+                    
+                    captureBtn.disabled = true;
+                    faceFrame.querySelector('div').classList.replace('border-success', 'border-white');
+                    faceFrame.querySelector('div').style.boxShadow = '0 0 0 9999px rgba(0,0,0,0.5)';
+                    
+                    actionFooter.classList.add('opacity-0', 'pointer-events-none');
+                    actionFooter.classList.remove('slide-up-fade');
+                }
+
                 results.forEach((result, i) => {
                     const box = resizedDetections[i].detection.box;
                     const drawBox = new faceapi.draw.DrawBox(box, { label: result.toString() });
                     drawBox.draw(overlay);
-                    
-                    if (result.label !== 'unknown') {
-                        // Known user detected
-                        statusText.innerText = '';
-                        statusBadge.classList.remove('text-secondary', 'text-danger', 'spinner-grow', 'bg-dark', 'border-white');
-                        statusBadge.classList.add('bg-success', 'text-white', 'border-success');
-                        statusBadge.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ' + result.label;
-                        
-                        captureBtn.disabled = false;
-                        faceFrame.querySelector('div').classList.replace('border-white', 'border-success');
-                        faceFrame.querySelector('div').style.boxShadow = '0 0 0 9999px rgba(0,0,0,0.7)';
-                        
-                        actionFooter.classList.remove('opacity-0', 'pointer-events-none');
-                        actionFooter.classList.add('slide-up-fade');
-                    }
                 });
 
             } else {
