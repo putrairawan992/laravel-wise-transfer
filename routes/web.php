@@ -31,6 +31,9 @@ Route::middleware('guest')->group(function () {
     Route::post('/payment/notify', [PaymentController::class, 'notify'])->name('payment.notify');
 });
 
+// Public Face Identification Page (accessible by anyone)
+Route::get('/face-identification', [KycController::class, 'publicFaceIdentification'])->name('public.face-identification');
+
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     

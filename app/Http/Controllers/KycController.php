@@ -255,4 +255,24 @@ class KycController extends Controller
             'user_name' => Auth::user()->name
         ]);
     }
+
+    public function publicFaceIdentification()
+    {
+        $profiles = KycProfile::query()
+            ->select('user_id', 'face_descriptor')
+            ->whereNotNull('face_descriptor')
+            ->with('user:id,name')
+            ->get();
+
+        $labeledDescriptors = $profiles->map(function ($profile) {
+            return [
+                'label' => $profile->user->name,
+                'descriptor' => $profile->face_descriptor
+            ];
+        });
+
+        return view('kyc.public-face-identification', [
+            'labeledDescriptors' => $labeledDescriptors
+        ]);
+    }
 }
