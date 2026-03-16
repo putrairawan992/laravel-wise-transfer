@@ -99,7 +99,13 @@
     let isModelLoaded = false;
     let detectionInterval;
     let faceMatcher = null;
-    let labeledFaceDescriptors = [];
+    let descriptorPool = [];
+    let stableMatchLabel = null;
+    let stableMatchCount = 0;
+
+    const MATCH_THRESHOLD = 0.45;
+    const MIN_STABLE_FRAMES = 6;
+    const AMBIGUOUS_GAP = 0.05;
 
     async function loadModels() {
         try {
@@ -131,10 +137,14 @@
             if (users.length > 0) {
                 const labeledDescriptorsArray = users.map(user => {
                     const descriptor = new Float32Array(JSON.parse(user.descriptor));
+                    descriptorPool.push({
+                        label: user.label,
+                        descriptor,
+                    });
                     return new faceapi.LabeledFaceDescriptors(user.label, [descriptor]);
                 });
-                
-                faceMatcher = new faceapi.FaceMatcher(labeledDescriptorsArray, 0.6);
+
+                faceMatcher = new faceapi.FaceMatcher(labeledDescriptorsArray, MATCH_THRESHOLD);
             } else {
                 alert('No registered faces found in the system.');
             }
@@ -180,6 +190,45 @@
         }
     }
 
+    function getStableBestMatch(queryDescriptor) {
+        if (descriptorPool.length === 0) {
+            stableMatchLabel = null;
+            stableMatchCount = 0;
+            return null;
+        }
+
+        const ranked = descriptorPool
+            .map(item => ({
+                label: item.label,
+                distance: faceapi.euclideanDistance(item.descriptor, queryDescriptor),
+            }))
+            .sort((a, b) => a.distance - b.distance);
+
+        const best = ranked[0];
+        const second = ranked[1] ?? null;
+        const isAmbiguous = second ? (second.distance - best.distance) < AMBIGUOUS_GAP : false;
+        const accepted = !isAmbiguous && best.distance <= MATCH_THRESHOLD;
+
+        if (!accepted) {
+            stableMatchLabel = null;
+            stableMatchCount = 0;
+            return null;
+        }
+
+        if (stableMatchLabel === best.label) {
+            stableMatchCount += 1;
+        } else {
+            stableMatchLabel = best.label;
+            stableMatchCount = 1;
+        }
+
+        if (stableMatchCount < MIN_STABLE_FRAMES) {
+            return null;
+        }
+
+        return best;
+    }
+
     function detectForRecognition(displaySize) {
         detectionInterval = setInterval(async () => {
             if (!faceMatcher) return;
@@ -193,20 +242,16 @@
             context.clearRect(0, 0, overlay.width, overlay.height);
             
             if (detections.length > 0) {
-                // Match faces
-                const results = resizedDetections.map(d => faceMatcher.findBestMatch(d.descriptor));
+                const stableBestMatch = getStableBestMatch(resizedDetections[0].descriptor);
                 
-                // Find if we have a match
-                const match = results.find(r => r.label !== 'unknown');
-                
-                if (match) {
+                if (stableBestMatch) {
                     // Known user detected
                     statusText.innerText = '';
                     statusBadge.classList.remove('text-secondary', 'text-danger', 'spinner-grow', 'bg-dark', 'border-white');
                     statusBadge.classList.add('bg-success', 'text-white', 'border-success');
-                    statusBadge.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ' + match.label;
+                    statusBadge.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ' + stableBestMatch.label;
                     
-                    identifiedName.innerText = match.label;
+                    identifiedName.innerText = stableBestMatch.label;
                     faceFrame.querySelector('div').classList.replace('border-white', 'border-success');
                     faceFrame.querySelector('div').style.boxShadow = '0 0 0 9999px rgba(0,0,0,0.7)';
                     
@@ -227,6 +272,7 @@
                     actionFooter.classList.remove('slide-up-fade');
                 }
 
+                const results = resizedDetections.map(d => faceMatcher.findBestMatch(d.descriptor));
                 results.forEach((result, i) => {
                     const box = resizedDetections[i].detection.box;
                     const drawBox = new faceapi.draw.DrawBox(box, { label: result.toString() });
@@ -234,6 +280,8 @@
                 });
 
             } else {
+                stableMatchLabel = null;
+                stableMatchCount = 0;
                 statusText.innerText = 'Searching...';
                 statusBadge.classList.remove('bg-success', 'text-white', 'border-success');
                 statusBadge.classList.add('text-secondary', 'spinner-grow', 'bg-dark', 'border-white');

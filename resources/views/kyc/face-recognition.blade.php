@@ -115,6 +115,12 @@
     let detectionInterval;
     let faceMatcher = null;
     let labeledFaceDescriptors = null;
+    let lastDescriptorJson = null;
+    let hasStrongMatch = false;
+    let stableMatchCount = 0;
+
+    const MATCH_THRESHOLD = 0.45;
+    const MIN_STABLE_FRAMES = 5;
 
     async function loadModels() {
         try {
@@ -145,7 +151,7 @@
                 const serverDescriptor = @json($face_descriptor);
                 const descriptor = new Float32Array(JSON.parse(serverDescriptor));
                 labeledFaceDescriptors = new faceapi.LabeledFaceDescriptors('{{ $user_name }}', [descriptor]);
-                faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
+                faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, MATCH_THRESHOLD);
                 
                 registerBtn.classList.add('d-none');
                 startBtn.classList.remove('d-none');
@@ -279,6 +285,9 @@
             context.clearRect(0, 0, overlay.width, overlay.height);
             
             if (detections.length > 0) {
+                const primaryDescriptor = resizedDetections[0].descriptor;
+                lastDescriptorJson = JSON.stringify(Array.from(primaryDescriptor));
+
                 // Match faces
                 const results = resizedDetections.map(d => faceMatcher.findBestMatch(d.descriptor));
                 
@@ -286,26 +295,49 @@
                 const match = results.find(r => r.label !== 'unknown');
                 
                 if (match) {
+                    if (match.distance <= MATCH_THRESHOLD) {
+                        stableMatchCount += 1;
+                    } else {
+                        stableMatchCount = 0;
+                    }
+
+                    hasStrongMatch = stableMatchCount >= MIN_STABLE_FRAMES;
+
                     // Known user detected
                     statusText.innerText = '';
                     statusBadge.classList.remove('text-secondary', 'text-danger', 'spinner-grow', 'bg-dark', 'border-white');
                     statusBadge.classList.add('bg-success', 'text-white', 'border-success');
-                    statusBadge.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ' + match.label;
+                    statusBadge.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ' + (hasStrongMatch ? match.label : 'Hold still...');
                     
                     captureBtn.disabled = false;
+                    if (hasStrongMatch) {
+                        captureBtn.classList.remove('btn-warning');
+                        captureBtn.classList.add('btn-success');
+                        captureBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2 text-white"></i> Verify Identity';
+                    } else {
+                        captureBtn.classList.remove('btn-success');
+                        captureBtn.classList.add('btn-warning');
+                        captureBtn.innerHTML = '<i class="bi bi-hourglass-split me-2 text-white"></i> Verifying Stability...';
+                    }
                     faceFrame.querySelector('div').classList.replace('border-white', 'border-success');
                     faceFrame.querySelector('div').style.boxShadow = '0 0 0 9999px rgba(0,0,0,0.7)';
                     
                     actionFooter.classList.remove('opacity-0', 'pointer-events-none');
                     actionFooter.classList.add('slide-up-fade');
                 } else {
+                    stableMatchCount = 0;
+                    hasStrongMatch = false;
+
                     // Only unknown faces detected
-                    statusText.innerText = 'Unknown Face';
+                    statusText.innerText = 'Unknown Face - Manual Verification Available';
                     statusBadge.classList.remove('bg-success', 'text-white', 'border-success');
                     statusBadge.classList.add('text-danger', 'bg-dark', 'border-white');
-                    statusBadge.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>';
+                    statusBadge.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i> Unknown Face';
                     
-                    captureBtn.disabled = true;
+                    captureBtn.disabled = false;
+                    captureBtn.classList.remove('btn-success');
+                    captureBtn.classList.add('btn-warning');
+                    captureBtn.innerHTML = '<i class="bi bi-shield-check me-2 text-dark"></i> Verify Manually';
                     faceFrame.querySelector('div').classList.replace('border-success', 'border-white');
                     faceFrame.querySelector('div').style.boxShadow = '0 0 0 9999px rgba(0,0,0,0.5)';
                     
@@ -320,12 +352,18 @@
                 });
 
             } else {
+                lastDescriptorJson = null;
+                stableMatchCount = 0;
+                hasStrongMatch = false;
                 statusText.innerText = 'Searching...';
                 statusBadge.classList.remove('bg-success', 'text-white', 'border-success');
                 statusBadge.classList.add('text-secondary', 'spinner-grow', 'bg-dark', 'border-white');
                 statusBadge.innerHTML = ''; 
                 
                 captureBtn.disabled = true;
+                captureBtn.classList.remove('btn-warning');
+                captureBtn.classList.add('btn-success');
+                captureBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2 text-white"></i> Verify Identity';
                 faceFrame.querySelector('div').classList.replace('border-success', 'border-white');
                 faceFrame.querySelector('div').style.boxShadow = '0 0 0 9999px rgba(0,0,0,0.5)';
                 
@@ -365,7 +403,11 @@
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
-            body: JSON.stringify({ image: dataURL })
+            body: JSON.stringify({
+                image: dataURL,
+                descriptor: lastDescriptorJson,
+                manual_verify: !hasStrongMatch
+            })
         })
         .then(response => response.json())
         .then(data => {

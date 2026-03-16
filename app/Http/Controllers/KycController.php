@@ -114,6 +114,26 @@ class KycController extends Controller
         $kyc = KycProfile::query()->firstOrCreate(['user_id' => Auth::id()]);
         $baseDir = 'private/kyc/' . Auth::id();
 
+        $descriptorPayload = $request->input('descriptor') ?? ($request->json()?->get('descriptor'));
+        if ($descriptorPayload !== null) {
+            if (!is_string($descriptorPayload)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid face descriptor payload',
+                ], 422);
+            }
+
+            $decodedDescriptor = json_decode($descriptorPayload, true);
+            if (!is_array($decodedDescriptor) || count($decodedDescriptor) !== 128) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Face descriptor format is invalid',
+                ], 422);
+            }
+
+            $kyc->face_descriptor = $descriptorPayload;
+        }
+
         $diskName = config('kyc.disk');
         $disk = Storage::disk($diskName);
         $visibility = config('kyc.visibility', 'private');
