@@ -103,9 +103,9 @@
     let stableMatchLabel = null;
     let stableMatchCount = 0;
 
-    const MATCH_THRESHOLD = 0.45;
-    const MIN_STABLE_FRAMES = 6;
-    const AMBIGUOUS_GAP = 0.05;
+    const MATCH_THRESHOLD = Number(@json($match_threshold));
+    const MIN_STABLE_FRAMES = Number(@json($stable_frames));
+    const AMBIGUOUS_GAP = Number(@json($ambiguous_gap));
 
     async function loadModels() {
         try {

@@ -119,8 +119,8 @@
     let hasStrongMatch = false;
     let stableMatchCount = 0;
 
-    const MATCH_THRESHOLD = 0.45;
-    const MIN_STABLE_FRAMES = 5;
+    const MATCH_THRESHOLD = Number(@json($match_threshold));
+    const MIN_STABLE_FRAMES = Number(@json($stable_frames));
 
     async function loadModels() {
         try {

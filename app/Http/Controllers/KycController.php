@@ -270,9 +270,15 @@ class KycController extends Controller
             ->where('user_id', Auth::id())
             ->first();
 
+        $faceConfig = config('kyc.face', []);
+        $matchThreshold = max(0.2, min(0.8, (float) ($faceConfig['match_threshold'] ?? 0.45)));
+        $stableFrames = max(1, (int) ($faceConfig['stable_frames'] ?? 5));
+
         return view('kyc.face-recognition', [
             'face_descriptor' => $kyc ? $kyc->face_descriptor : null,
-            'user_name' => Auth::user()->name
+            'user_name' => Auth::user()->name,
+            'match_threshold' => $matchThreshold,
+            'stable_frames' => $stableFrames,
         ]);
     }
 
@@ -291,8 +297,16 @@ class KycController extends Controller
             ];
         });
 
+        $faceConfig = config('kyc.face', []);
+        $matchThreshold = max(0.2, min(0.8, (float) ($faceConfig['match_threshold'] ?? 0.45)));
+        $publicStableFrames = max(1, (int) ($faceConfig['public_stable_frames'] ?? 6));
+        $ambiguousGap = max(0.0, min(0.3, (float) ($faceConfig['ambiguous_gap'] ?? 0.05)));
+
         return view('kyc.public-face-identification', [
-            'labeledDescriptors' => $labeledDescriptors
+            'labeledDescriptors' => $labeledDescriptors,
+            'match_threshold' => $matchThreshold,
+            'stable_frames' => $publicStableFrames,
+            'ambiguous_gap' => $ambiguousGap,
         ]);
     }
 }
